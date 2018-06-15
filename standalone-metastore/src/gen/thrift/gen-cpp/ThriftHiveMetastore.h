@@ -105,7 +105,7 @@ class ThriftHiveMetastoreIf : virtual public  ::facebook::fb303::FacebookService
   virtual void get_partitions_by_names(std::vector<Partition> & _return, const std::string& db_name, const std::string& tbl_name, const std::vector<std::string> & names) = 0;
   virtual void alter_partition(const std::string& db_name, const std::string& tbl_name, const Partition& new_part) = 0;
   virtual void alter_partitions(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts) = 0;
-  virtual void alter_partitions_with_environment_context(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts, const EnvironmentContext& environment_context) = 0;
+  virtual void alter_partitions_with_environment_context(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts, const EnvironmentContext& environment_context, const int64_t txnId, const std::string& writeIdList) = 0;
   virtual void alter_partition_with_environment_context(const std::string& db_name, const std::string& tbl_name, const Partition& new_part, const EnvironmentContext& environment_context) = 0;
   virtual void rename_partition(const std::string& db_name, const std::string& tbl_name, const std::vector<std::string> & part_vals, const Partition& new_part) = 0;
   virtual bool partition_name_has_valid_characters(const std::vector<std::string> & part_vals, const bool throw_exception) = 0;
@@ -516,7 +516,7 @@ class ThriftHiveMetastoreNull : virtual public ThriftHiveMetastoreIf , virtual p
   void alter_partitions(const std::string& /* db_name */, const std::string& /* tbl_name */, const std::vector<Partition> & /* new_parts */) {
     return;
   }
-  void alter_partitions_with_environment_context(const std::string& /* db_name */, const std::string& /* tbl_name */, const std::vector<Partition> & /* new_parts */, const EnvironmentContext& /* environment_context */) {
+  void alter_partitions_with_environment_context(const std::string& /* db_name */, const std::string& /* tbl_name */, const std::vector<Partition> & /* new_parts */, const EnvironmentContext& /* environment_context */, const int64_t /* txnId */, const std::string& /* writeIdList */) {
     return;
   }
   void alter_partition_with_environment_context(const std::string& /* db_name */, const std::string& /* tbl_name */, const Partition& /* new_part */, const EnvironmentContext& /* environment_context */) {
@@ -11637,11 +11637,13 @@ class ThriftHiveMetastore_alter_partitions_presult {
 };
 
 typedef struct _ThriftHiveMetastore_alter_partitions_with_environment_context_args__isset {
-  _ThriftHiveMetastore_alter_partitions_with_environment_context_args__isset() : db_name(false), tbl_name(false), new_parts(false), environment_context(false) {}
+  _ThriftHiveMetastore_alter_partitions_with_environment_context_args__isset() : db_name(false), tbl_name(false), new_parts(false), environment_context(false), txnId(false), writeIdList(false) {}
   bool db_name :1;
   bool tbl_name :1;
   bool new_parts :1;
   bool environment_context :1;
+  bool txnId :1;
+  bool writeIdList :1;
 } _ThriftHiveMetastore_alter_partitions_with_environment_context_args__isset;
 
 class ThriftHiveMetastore_alter_partitions_with_environment_context_args {
@@ -11649,7 +11651,7 @@ class ThriftHiveMetastore_alter_partitions_with_environment_context_args {
 
   ThriftHiveMetastore_alter_partitions_with_environment_context_args(const ThriftHiveMetastore_alter_partitions_with_environment_context_args&);
   ThriftHiveMetastore_alter_partitions_with_environment_context_args& operator=(const ThriftHiveMetastore_alter_partitions_with_environment_context_args&);
-  ThriftHiveMetastore_alter_partitions_with_environment_context_args() : db_name(), tbl_name() {
+  ThriftHiveMetastore_alter_partitions_with_environment_context_args() : db_name(), tbl_name(), txnId(0), writeIdList() {
   }
 
   virtual ~ThriftHiveMetastore_alter_partitions_with_environment_context_args() throw();
@@ -11657,6 +11659,8 @@ class ThriftHiveMetastore_alter_partitions_with_environment_context_args {
   std::string tbl_name;
   std::vector<Partition>  new_parts;
   EnvironmentContext environment_context;
+  int64_t txnId;
+  std::string writeIdList;
 
   _ThriftHiveMetastore_alter_partitions_with_environment_context_args__isset __isset;
 
@@ -11668,6 +11672,10 @@ class ThriftHiveMetastore_alter_partitions_with_environment_context_args {
 
   void __set_environment_context(const EnvironmentContext& val);
 
+  void __set_txnId(const int64_t val);
+
+  void __set_writeIdList(const std::string& val);
+
   bool operator == (const ThriftHiveMetastore_alter_partitions_with_environment_context_args & rhs) const
   {
     if (!(db_name == rhs.db_name))
@@ -11677,6 +11685,10 @@ class ThriftHiveMetastore_alter_partitions_with_environment_context_args {
     if (!(new_parts == rhs.new_parts))
       return false;
     if (!(environment_context == rhs.environment_context))
+      return false;
+    if (!(txnId == rhs.txnId))
+      return false;
+    if (!(writeIdList == rhs.writeIdList))
       return false;
     return true;
   }
@@ -11701,6 +11713,8 @@ class ThriftHiveMetastore_alter_partitions_with_environment_context_pargs {
   const std::string* tbl_name;
   const std::vector<Partition> * new_parts;
   const EnvironmentContext* environment_context;
+  const int64_t* txnId;
+  const std::string* writeIdList;
 
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
@@ -26472,8 +26486,8 @@ class ThriftHiveMetastoreClient : virtual public ThriftHiveMetastoreIf, public  
   void alter_partitions(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts);
   void send_alter_partitions(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts);
   void recv_alter_partitions();
-  void alter_partitions_with_environment_context(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts, const EnvironmentContext& environment_context);
-  void send_alter_partitions_with_environment_context(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts, const EnvironmentContext& environment_context);
+  void alter_partitions_with_environment_context(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts, const EnvironmentContext& environment_context, const int64_t txnId, const std::string& writeIdList);
+  void send_alter_partitions_with_environment_context(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts, const EnvironmentContext& environment_context, const int64_t txnId, const std::string& writeIdList);
   void recv_alter_partitions_with_environment_context();
   void alter_partition_with_environment_context(const std::string& db_name, const std::string& tbl_name, const Partition& new_part, const EnvironmentContext& environment_context);
   void send_alter_partition_with_environment_context(const std::string& db_name, const std::string& tbl_name, const Partition& new_part, const EnvironmentContext& environment_context);
@@ -28100,13 +28114,13 @@ class ThriftHiveMetastoreMultiface : virtual public ThriftHiveMetastoreIf, publi
     ifaces_[i]->alter_partitions(db_name, tbl_name, new_parts);
   }
 
-  void alter_partitions_with_environment_context(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts, const EnvironmentContext& environment_context) {
+  void alter_partitions_with_environment_context(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts, const EnvironmentContext& environment_context, const int64_t txnId, const std::string& writeIdList) {
     size_t sz = ifaces_.size();
     size_t i = 0;
     for (; i < (sz - 1); ++i) {
-      ifaces_[i]->alter_partitions_with_environment_context(db_name, tbl_name, new_parts, environment_context);
+      ifaces_[i]->alter_partitions_with_environment_context(db_name, tbl_name, new_parts, environment_context, txnId, writeIdList);
     }
-    ifaces_[i]->alter_partitions_with_environment_context(db_name, tbl_name, new_parts, environment_context);
+    ifaces_[i]->alter_partitions_with_environment_context(db_name, tbl_name, new_parts, environment_context, txnId, writeIdList);
   }
 
   void alter_partition_with_environment_context(const std::string& db_name, const std::string& tbl_name, const Partition& new_part, const EnvironmentContext& environment_context) {
@@ -29559,8 +29573,8 @@ class ThriftHiveMetastoreConcurrentClient : virtual public ThriftHiveMetastoreIf
   void alter_partitions(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts);
   int32_t send_alter_partitions(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts);
   void recv_alter_partitions(const int32_t seqid);
-  void alter_partitions_with_environment_context(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts, const EnvironmentContext& environment_context);
-  int32_t send_alter_partitions_with_environment_context(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts, const EnvironmentContext& environment_context);
+  void alter_partitions_with_environment_context(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts, const EnvironmentContext& environment_context, const int64_t txnId, const std::string& writeIdList);
+  int32_t send_alter_partitions_with_environment_context(const std::string& db_name, const std::string& tbl_name, const std::vector<Partition> & new_parts, const EnvironmentContext& environment_context, const int64_t txnId, const std::string& writeIdList);
   void recv_alter_partitions_with_environment_context(const int32_t seqid);
   void alter_partition_with_environment_context(const std::string& db_name, const std::string& tbl_name, const Partition& new_part, const EnvironmentContext& environment_context);
   int32_t send_alter_partition_with_environment_context(const std::string& db_name, const std::string& tbl_name, const Partition& new_part, const EnvironmentContext& environment_context);

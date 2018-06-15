@@ -717,13 +717,15 @@ class Iface(fb303.FacebookService.Iface):
     """
     pass
 
-  def alter_partitions_with_environment_context(self, db_name, tbl_name, new_parts, environment_context):
+  def alter_partitions_with_environment_context(self, db_name, tbl_name, new_parts, environment_context, txnId, writeIdList):
     """
     Parameters:
      - db_name
      - tbl_name
      - new_parts
      - environment_context
+     - txnId
+     - writeIdList
     """
     pass
 
@@ -4734,24 +4736,28 @@ class Client(fb303.FacebookService.Client, Iface):
       raise result.o2
     return
 
-  def alter_partitions_with_environment_context(self, db_name, tbl_name, new_parts, environment_context):
+  def alter_partitions_with_environment_context(self, db_name, tbl_name, new_parts, environment_context, txnId, writeIdList):
     """
     Parameters:
      - db_name
      - tbl_name
      - new_parts
      - environment_context
+     - txnId
+     - writeIdList
     """
-    self.send_alter_partitions_with_environment_context(db_name, tbl_name, new_parts, environment_context)
+    self.send_alter_partitions_with_environment_context(db_name, tbl_name, new_parts, environment_context, txnId, writeIdList)
     self.recv_alter_partitions_with_environment_context()
 
-  def send_alter_partitions_with_environment_context(self, db_name, tbl_name, new_parts, environment_context):
+  def send_alter_partitions_with_environment_context(self, db_name, tbl_name, new_parts, environment_context, txnId, writeIdList):
     self._oprot.writeMessageBegin('alter_partitions_with_environment_context', TMessageType.CALL, self._seqid)
     args = alter_partitions_with_environment_context_args()
     args.db_name = db_name
     args.tbl_name = tbl_name
     args.new_parts = new_parts
     args.environment_context = environment_context
+    args.txnId = txnId
+    args.writeIdList = writeIdList
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
@@ -11366,7 +11372,7 @@ class Processor(fb303.FacebookService.Processor, Iface, TProcessor):
     iprot.readMessageEnd()
     result = alter_partitions_with_environment_context_result()
     try:
-      self._handler.alter_partitions_with_environment_context(args.db_name, args.tbl_name, args.new_parts, args.environment_context)
+      self._handler.alter_partitions_with_environment_context(args.db_name, args.tbl_name, args.new_parts, args.environment_context, args.txnId, args.writeIdList)
       msg_type = TMessageType.REPLY
     except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
       raise
@@ -29394,6 +29400,8 @@ class alter_partitions_with_environment_context_args:
    - tbl_name
    - new_parts
    - environment_context
+   - txnId
+   - writeIdList
   """
 
   thrift_spec = (
@@ -29402,13 +29410,17 @@ class alter_partitions_with_environment_context_args:
     (2, TType.STRING, 'tbl_name', None, None, ), # 2
     (3, TType.LIST, 'new_parts', (TType.STRUCT,(Partition, Partition.thrift_spec)), None, ), # 3
     (4, TType.STRUCT, 'environment_context', (EnvironmentContext, EnvironmentContext.thrift_spec), None, ), # 4
+    (5, TType.I64, 'txnId', None, None, ), # 5
+    (6, TType.STRING, 'writeIdList', None, None, ), # 6
   )
 
-  def __init__(self, db_name=None, tbl_name=None, new_parts=None, environment_context=None,):
+  def __init__(self, db_name=None, tbl_name=None, new_parts=None, environment_context=None, txnId=None, writeIdList=None,):
     self.db_name = db_name
     self.tbl_name = tbl_name
     self.new_parts = new_parts
     self.environment_context = environment_context
+    self.txnId = txnId
+    self.writeIdList = writeIdList
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -29446,6 +29458,16 @@ class alter_partitions_with_environment_context_args:
           self.environment_context.read(iprot)
         else:
           iprot.skip(ftype)
+      elif fid == 5:
+        if ftype == TType.I64:
+          self.txnId = iprot.readI64()
+        else:
+          iprot.skip(ftype)
+      elif fid == 6:
+        if ftype == TType.STRING:
+          self.writeIdList = iprot.readString()
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -29475,6 +29497,14 @@ class alter_partitions_with_environment_context_args:
       oprot.writeFieldBegin('environment_context', TType.STRUCT, 4)
       self.environment_context.write(oprot)
       oprot.writeFieldEnd()
+    if self.txnId is not None:
+      oprot.writeFieldBegin('txnId', TType.I64, 5)
+      oprot.writeI64(self.txnId)
+      oprot.writeFieldEnd()
+    if self.writeIdList is not None:
+      oprot.writeFieldBegin('writeIdList', TType.STRING, 6)
+      oprot.writeString(self.writeIdList)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -29488,6 +29518,8 @@ class alter_partitions_with_environment_context_args:
     value = (value * 31) ^ hash(self.tbl_name)
     value = (value * 31) ^ hash(self.new_parts)
     value = (value * 31) ^ hash(self.environment_context)
+    value = (value * 31) ^ hash(self.txnId)
+    value = (value * 31) ^ hash(self.writeIdList)
     return value
 
   def __repr__(self):

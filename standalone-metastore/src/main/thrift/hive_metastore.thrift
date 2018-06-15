@@ -233,6 +233,12 @@ enum SchemaVersionState {
   DELETED = 8
 }
 
+enum IsolationLevelCompliance {
+  YES = 1,
+  NO = 2, 
+  UNKNOWN = 3
+}
+
 struct HiveObjectRef{
   1: HiveObjectType objectType,
   2: string dbName,
@@ -430,7 +436,10 @@ struct Table {
   15: optional bool rewriteEnabled,     // rewrite enabled or not
   16: optional CreationMetadata creationMetadata,   // only for MVs, it stores table names used and txn list at MV creation
   17: optional string catName,          // Name of the catalog the table is in
-  18: optional PrincipalType ownerType = PrincipalType.USER // owner type of this table (default to USER for backward compatibility)
+  18: optional PrincipalType ownerType = PrincipalType.USER, // owner type of this table (default to USER for backward compatibility)
+  19: optional i64 txnId=-1,
+  20: optional string validWriteIdList,
+  21: optional IsolationLevelCompliance isStatsCompliant
 }
 
 struct Partition {
@@ -442,7 +451,10 @@ struct Partition {
   6: StorageDescriptor   sd,
   7: map<string, string> parameters,
   8: optional PrincipalPrivilegeSet privileges,
-  9: optional string catName
+  9: optional string catName,
+  10: optional i64 txnId=-1,
+  11: optional string validWriteIdList,
+  12: optional IsolationLevelCompliance isStatsCompliant
 }
 
 struct PartitionWithoutSD {
@@ -469,7 +481,10 @@ struct PartitionSpec {
   3: string rootPath,
   4: optional PartitionSpecWithSharedSD sharedSDPartitionSpec,
   5: optional PartitionListComposingSpec partitionList,
-  6: optional string catName
+  6: optional string catName,
+  7: optional i64 txnId=-1,
+  8: optional string validWriteIdList,
+  9: optional IsolationLevelCompliance isStatsCompliant
 }
 
 // column statistics
@@ -564,17 +579,23 @@ struct ColumnStatisticsDesc {
 
 struct ColumnStatistics {
 1: required ColumnStatisticsDesc statsDesc,
-2: required list<ColumnStatisticsObj> statsObj;
+2: required list<ColumnStatisticsObj> statsObj,
+3: optional i64 txnId=-1,
+4: optional string validWriteIdList,
+5: optional IsolationLevelCompliance isStatsCompliant
 }
 
 struct AggrStats {
 1: required list<ColumnStatisticsObj> colStats,
-2: required i64 partsFound // number of partitions for which stats were found
+2: required i64 partsFound, // number of partitions for which stats were found
+3: optional IsolationLevelCompliance isStatsCompliant
 }
 
 struct SetPartitionsStatsRequest {
 1: required list<ColumnStatistics> colStats,
-2: optional bool needMerge //stats need to be merged with the existing stats
+2: optional bool needMerge, //stats need to be merged with the existing stats
+3: optional i64 txnId=-1,
+4: optional string validWriteIdList
 }
 
 // schema of the table/query results etc.
@@ -703,18 +724,22 @@ struct PartitionsByExprRequest {
 }
 
 struct TableStatsResult {
-  1: required list<ColumnStatisticsObj> tableStats
+  1: required list<ColumnStatisticsObj> tableStats,
+  2: optional IsolationLevelCompliance isStatsCompliant
 }
 
 struct PartitionsStatsResult {
-  1: required map<string, list<ColumnStatisticsObj>> partStats
+  1: required map<string, list<ColumnStatisticsObj>> partStats,
+  2: optional IsolationLevelCompliance isStatsCompliant
 }
 
 struct TableStatsRequest {
  1: required string dbName,
  2: required string tblName,
  3: required list<string> colNames
- 4: optional string catName
+ 4: optional string catName,
+ 5: optional i64 txnId=-1,
+ 6: optional string validWriteIdList
 }
 
 struct PartitionsStatsRequest {
@@ -722,12 +747,15 @@ struct PartitionsStatsRequest {
  2: required string tblName,
  3: required list<string> colNames,
  4: required list<string> partNames,
- 5: optional string catName
+ 5: optional string catName,
+ 6: optional i64 txnId=-1,
+ 7: optional string validWriteIdList
 }
 
 // Return type for add_partitions_req
 struct AddPartitionsResult {
   1: optional list<Partition> partitions,
+  2: optional IsolationLevelCompliance isStatsCompliant
 }
 
 // Request type for add_partitions_req
@@ -737,7 +765,9 @@ struct AddPartitionsRequest {
   3: required list<Partition> parts,
   4: required bool ifNotExists,
   5: optional bool needResult=true,
-  6: optional string catName
+  6: optional string catName,
+  7: optional i64 txnId=-1,
+  8: optional string validWriteIdList
 }
 
 // Return type for drop_partitions_req
@@ -1209,11 +1239,14 @@ struct GetTableRequest {
   1: required string dbName,
   2: required string tblName,
   3: optional ClientCapabilities capabilities,
-  4: optional string catName
+  4: optional string catName,
+  5: optional i64 txnId=-1,
+  6: optional string validWriteIdList
 }
 
 struct GetTableResult {
-  1: required Table table
+  1: required Table table,
+  2: optional IsolationLevelCompliance isStatsCompliant
 }
 
 struct GetTablesRequest {
@@ -1874,7 +1907,7 @@ service ThriftHiveMetastore extends fb303.FacebookService
   // prehooks are fired together followed by all post hooks
   void alter_partitions(1:string db_name, 2:string tbl_name, 3:list<Partition> new_parts)
                        throws (1:InvalidOperationException o1, 2:MetaException o2)
-  void alter_partitions_with_environment_context(1:string db_name, 2:string tbl_name, 3:list<Partition> new_parts, 4:EnvironmentContext environment_context) throws (1:InvalidOperationException o1, 2:MetaException o2)
+  void alter_partitions_with_environment_context(1:string db_name, 2:string tbl_name, 3:list<Partition> new_parts, 4:EnvironmentContext environment_context, 5:i64 txnId, 6:string writeIdList) throws (1:InvalidOperationException o1, 2:MetaException o2)
 
   void alter_partition_with_environment_context(1:string db_name,
       2:string tbl_name, 3:Partition new_part,

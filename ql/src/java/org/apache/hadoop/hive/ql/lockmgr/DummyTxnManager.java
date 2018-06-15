@@ -77,6 +77,12 @@ class DummyTxnManager extends HiveTxnManagerImpl {
   public long getTableWriteId(String dbName, String tableName) throws LockException {
     return 0L;
   }
+
+  @Override
+  public long getAllocatedTableWriteId(String dbName, String tableName) throws LockException {
+    return 0L;
+  }
+
   @Override
   public void replAllocateTableWriteIdsBatch(String dbName, String tableName, String replPolicy,
                                              List<TxnToWriteId> srcTxnToWriteIdList) throws LockException {

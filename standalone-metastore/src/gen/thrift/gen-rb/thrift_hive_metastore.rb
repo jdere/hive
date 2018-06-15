@@ -1416,13 +1416,13 @@ module ThriftHiveMetastore
       return
     end
 
-    def alter_partitions_with_environment_context(db_name, tbl_name, new_parts, environment_context)
-      send_alter_partitions_with_environment_context(db_name, tbl_name, new_parts, environment_context)
+    def alter_partitions_with_environment_context(db_name, tbl_name, new_parts, environment_context, txnId, writeIdList)
+      send_alter_partitions_with_environment_context(db_name, tbl_name, new_parts, environment_context, txnId, writeIdList)
       recv_alter_partitions_with_environment_context()
     end
 
-    def send_alter_partitions_with_environment_context(db_name, tbl_name, new_parts, environment_context)
-      send_message('alter_partitions_with_environment_context', Alter_partitions_with_environment_context_args, :db_name => db_name, :tbl_name => tbl_name, :new_parts => new_parts, :environment_context => environment_context)
+    def send_alter_partitions_with_environment_context(db_name, tbl_name, new_parts, environment_context, txnId, writeIdList)
+      send_message('alter_partitions_with_environment_context', Alter_partitions_with_environment_context_args, :db_name => db_name, :tbl_name => tbl_name, :new_parts => new_parts, :environment_context => environment_context, :txnId => txnId, :writeIdList => writeIdList)
     end
 
     def recv_alter_partitions_with_environment_context()
@@ -4580,7 +4580,7 @@ module ThriftHiveMetastore
       args = read_args(iprot, Alter_partitions_with_environment_context_args)
       result = Alter_partitions_with_environment_context_result.new()
       begin
-        @handler.alter_partitions_with_environment_context(args.db_name, args.tbl_name, args.new_parts, args.environment_context)
+        @handler.alter_partitions_with_environment_context(args.db_name, args.tbl_name, args.new_parts, args.environment_context, args.txnId, args.writeIdList)
       rescue ::InvalidOperationException => o1
         result.o1 = o1
       rescue ::MetaException => o2
@@ -9276,12 +9276,16 @@ module ThriftHiveMetastore
     TBL_NAME = 2
     NEW_PARTS = 3
     ENVIRONMENT_CONTEXT = 4
+    TXNID = 5
+    WRITEIDLIST = 6
 
     FIELDS = {
       DB_NAME => {:type => ::Thrift::Types::STRING, :name => 'db_name'},
       TBL_NAME => {:type => ::Thrift::Types::STRING, :name => 'tbl_name'},
       NEW_PARTS => {:type => ::Thrift::Types::LIST, :name => 'new_parts', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Partition}},
-      ENVIRONMENT_CONTEXT => {:type => ::Thrift::Types::STRUCT, :name => 'environment_context', :class => ::EnvironmentContext}
+      ENVIRONMENT_CONTEXT => {:type => ::Thrift::Types::STRUCT, :name => 'environment_context', :class => ::EnvironmentContext},
+      TXNID => {:type => ::Thrift::Types::I64, :name => 'txnId'},
+      WRITEIDLIST => {:type => ::Thrift::Types::STRING, :name => 'writeIdList'}
     }
 
     def struct_fields; FIELDS; end

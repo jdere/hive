@@ -293,7 +293,7 @@ public class MetastoreConf {
         "hive.metastore.cached.rawstore.impl", "org.apache.hadoop.hive.metastore.ObjectStore",
         "Name of the wrapped RawStore class"),
     CACHED_RAW_STORE_CACHE_UPDATE_FREQUENCY("metastore.cached.rawstore.cache.update.frequency",
-        "hive.metastore.cached.rawstore.cache.update.frequency", 60, TimeUnit.SECONDS,
+        "hive.metastore.cached.rawstore.cache.update.frequency", 60000, TimeUnit.SECONDS,
         "The time after which metastore cache is updated from metastore DB."),
     CACHED_RAW_STORE_CACHED_OBJECTS_WHITELIST("metastore.cached.rawstore.cached.object.whitelist",
         "hive.metastore.cached.rawstore.cached.object.whitelist", ".*", "Comma separated list of regular expressions \n " +
@@ -648,7 +648,7 @@ public class MetastoreConf {
     PWD("javax.jdo.option.ConnectionPassword", "javax.jdo.option.ConnectionPassword", "mine",
         "password to use against metastore database"),
     RAW_STORE_IMPL("metastore.rawstore.impl", "hive.metastore.rawstore.impl",
-        "org.apache.hadoop.hive.metastore.ObjectStore",
+        "org.apache.hadoop.hive.metastore.cache.CachedStore",
         "Name of the class that implements org.apache.riven.rawstore interface. \n" +
             "This class is used to store and retrieval of raw metadata objects such as table, database"),
     REPLCMDIR("metastore.repl.cmrootdir", "hive.repl.cmrootdir", "/user/hive/cmroot/",

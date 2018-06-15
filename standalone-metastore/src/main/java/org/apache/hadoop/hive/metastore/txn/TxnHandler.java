@@ -19,13 +19,7 @@ package org.apache.hadoop.hive.metastore.txn;
 
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
-import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.Savepoint;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;

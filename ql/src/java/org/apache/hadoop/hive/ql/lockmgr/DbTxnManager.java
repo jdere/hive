@@ -1017,9 +1017,22 @@ public final class DbTxnManager extends HiveTxnManagerImpl {
   @Override
   public long getTableWriteId(String dbName, String tableName) throws LockException {
     assert isTxnOpen();
+    return getTableWriteId(dbName, tableName, true);
+  }
+
+  @Override
+  public long getAllocatedTableWriteId(String dbName, String tableName) throws LockException {
+    assert isTxnOpen();
+    return getTableWriteId(dbName, tableName, false);
+  }
+
+  private long getTableWriteId(
+      String dbName, String tableName, boolean allocateIfNotYet) throws LockException {
     String fullTableName = AcidUtils.getFullTableName(dbName, tableName);
     if (tableWriteIds.containsKey(fullTableName)) {
       return tableWriteIds.get(fullTableName);
+    } else if (!allocateIfNotYet) {
+      return 0;
     }
     try {
       long writeId = getMS().allocateTableWriteId(txnId, dbName, tableName);

@@ -718,10 +718,12 @@ interface ThriftHiveMetastoreIf extends \FacebookServiceIf {
    * @param string $tbl_name
    * @param \metastore\Partition[] $new_parts
    * @param \metastore\EnvironmentContext $environment_context
+   * @param int $txnId
+   * @param string $writeIdList
    * @throws \metastore\InvalidOperationException
    * @throws \metastore\MetaException
    */
-  public function alter_partitions_with_environment_context($db_name, $tbl_name, array $new_parts, \metastore\EnvironmentContext $environment_context);
+  public function alter_partitions_with_environment_context($db_name, $tbl_name, array $new_parts, \metastore\EnvironmentContext $environment_context, $txnId, $writeIdList);
   /**
    * @param string $db_name
    * @param string $tbl_name
@@ -6394,19 +6396,21 @@ class ThriftHiveMetastoreClient extends \FacebookServiceClient implements \metas
     return;
   }
 
-  public function alter_partitions_with_environment_context($db_name, $tbl_name, array $new_parts, \metastore\EnvironmentContext $environment_context)
+  public function alter_partitions_with_environment_context($db_name, $tbl_name, array $new_parts, \metastore\EnvironmentContext $environment_context, $txnId, $writeIdList)
   {
-    $this->send_alter_partitions_with_environment_context($db_name, $tbl_name, $new_parts, $environment_context);
+    $this->send_alter_partitions_with_environment_context($db_name, $tbl_name, $new_parts, $environment_context, $txnId, $writeIdList);
     $this->recv_alter_partitions_with_environment_context();
   }
 
-  public function send_alter_partitions_with_environment_context($db_name, $tbl_name, array $new_parts, \metastore\EnvironmentContext $environment_context)
+  public function send_alter_partitions_with_environment_context($db_name, $tbl_name, array $new_parts, \metastore\EnvironmentContext $environment_context, $txnId, $writeIdList)
   {
     $args = new \metastore\ThriftHiveMetastore_alter_partitions_with_environment_context_args();
     $args->db_name = $db_name;
     $args->tbl_name = $tbl_name;
     $args->new_parts = $new_parts;
     $args->environment_context = $environment_context;
+    $args->txnId = $txnId;
+    $args->writeIdList = $writeIdList;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
     {
@@ -34329,6 +34333,14 @@ class ThriftHiveMetastore_alter_partitions_with_environment_context_args {
    * @var \metastore\EnvironmentContext
    */
   public $environment_context = null;
+  /**
+   * @var int
+   */
+  public $txnId = null;
+  /**
+   * @var string
+   */
+  public $writeIdList = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -34355,6 +34367,14 @@ class ThriftHiveMetastore_alter_partitions_with_environment_context_args {
           'type' => TType::STRUCT,
           'class' => '\metastore\EnvironmentContext',
           ),
+        5 => array(
+          'var' => 'txnId',
+          'type' => TType::I64,
+          ),
+        6 => array(
+          'var' => 'writeIdList',
+          'type' => TType::STRING,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -34369,6 +34389,12 @@ class ThriftHiveMetastore_alter_partitions_with_environment_context_args {
       }
       if (isset($vals['environment_context'])) {
         $this->environment_context = $vals['environment_context'];
+      }
+      if (isset($vals['txnId'])) {
+        $this->txnId = $vals['txnId'];
+      }
+      if (isset($vals['writeIdList'])) {
+        $this->writeIdList = $vals['writeIdList'];
       }
     }
   }
@@ -34432,6 +34458,20 @@ class ThriftHiveMetastore_alter_partitions_with_environment_context_args {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 5:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->txnId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 6:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->writeIdList);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -34478,6 +34518,16 @@ class ThriftHiveMetastore_alter_partitions_with_environment_context_args {
       }
       $xfer += $output->writeFieldBegin('environment_context', TType::STRUCT, 4);
       $xfer += $this->environment_context->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->txnId !== null) {
+      $xfer += $output->writeFieldBegin('txnId', TType::I64, 5);
+      $xfer += $output->writeI64($this->txnId);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->writeIdList !== null) {
+      $xfer += $output->writeFieldBegin('writeIdList', TType::STRING, 6);
+      $xfer += $output->writeString($this->writeIdList);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
