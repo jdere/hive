@@ -12847,7 +12847,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         }
       }
     }
-    boolean makeInsertOnly = HiveConf.getBoolVar(conf, ConfVars.HIVE_CREATE_TABLES_AS_INSERT_ONLY);
+    boolean makeInsertOnly = !isTemporaryTable && HiveConf.getBoolVar(conf, ConfVars.HIVE_CREATE_TABLES_AS_INSERT_ONLY);
     boolean makeAcid = !isTemporaryTable &&
         MetastoreConf.getBoolVar(conf, MetastoreConf.ConfVars.CREATE_TABLES_AS_ACID) &&
         HiveConf.getBoolVar(conf, ConfVars.HIVE_SUPPORT_CONCURRENCY) &&
@@ -13139,6 +13139,9 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         throw new SemanticException("Partition columns are not supported on temporary tables");
       }
 
+      if (AcidUtils.isTransactionalTable(tblProps)) {
+        throw new SemanticException("Temporary transactional table is not supported.");
+      }
       if (location == null) {
         // for temporary tables we set the location to something in the session's scratch dir
         // it has the same life cycle as the tmp table
