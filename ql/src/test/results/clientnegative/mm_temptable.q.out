@@ -1,0 +1,5 @@
+PREHOOK: query: drop table if exists mm_temptable
+PREHOOK: type: DROPTABLE
+POSTHOOK: query: drop table if exists mm_temptable
+POSTHOOK: type: DROPTABLE
+FAILED: SemanticException Temporary transactional table is not supported.

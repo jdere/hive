@@ -12847,7 +12847,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         }
       }
     }
-    boolean makeInsertOnly = HiveConf.getBoolVar(conf, ConfVars.HIVE_CREATE_TABLES_AS_INSERT_ONLY);
+    boolean makeInsertOnly = !isTemporaryTable && HiveConf.getBoolVar(conf, ConfVars.HIVE_CREATE_TABLES_AS_INSERT_ONLY);
     boolean makeAcid = !isTemporaryTable &&
         MetastoreConf.getBoolVar(conf, MetastoreConf.ConfVars.CREATE_TABLES_AS_ACID) &&
         HiveConf.getBoolVar(conf, ConfVars.HIVE_SUPPORT_CONCURRENCY) &&
@@ -13154,6 +13154,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     // Handle different types of CREATE TABLE command
     // Note: each branch must call addDbAndTabToOutputs after finalizing table properties.
+    ASTNode retv = null;
 
     switch (command_type) {
 
@@ -13278,12 +13279,18 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       tableDesc.setNullFormat(rowFormatParams.nullFormat);
       qb.setTableDesc(tableDesc);
 
-      return selectStmt;
+      retv = selectStmt;
+      break;
 
     default:
       throw new SemanticException("Unrecognized command.");
     }
-    return null;
+
+    if (isTemporary && AcidUtils.isTransactionalTable(tblProps)) {
+      throw new SemanticException("Temporary transactional table is not supported.");
+    }
+
+    return retv;
   }
 
   /** Adds entities for create table/create view. */
